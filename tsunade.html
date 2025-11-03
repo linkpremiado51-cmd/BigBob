@@ -51,6 +51,10 @@
             transform: translateY(1px);
         }
     </style>
+    <!-- Integração com Firebase (scripts necessários) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
 <body>
     <div class="container">
@@ -62,26 +66,62 @@
     </div>
 
     <script>
+        // Configuração do Firebase (extraída do arquivo "Publicação de serviço.html" fornecido)
+        const firebaseConfig = {
+            apiKey: "AIzaSyC6M0hV6L0hV6L0hV6L0hV6L0hV6L0hV6",  // Substitua pela chave real do seu projeto, se necessário (no documento era placeholder)
+            authDomain: "yshippcommerce.firebaseapp.com",
+            projectId: "yshippcommerce",
+            storageBucket: "yshippcommerce.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef123456"
+        };
+
+        // Inicializa o Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Função para registrar eventos no Firestore (coleção 'cliques')
+        async function registrarEvento(tipo) {
+            try {
+                await db.collection('cliques').add({
+                    tipo: tipo,  // 'acesso' ou 'clique'
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    userAgent: navigator.userAgent,  // Informações do navegador/dispositivo
+                    referrer: document.referrer || 'direto',  // Origem da página
+                    url: window.location.href  // URL atual da página
+                });
+                console.log(`${tipo} registrado com sucesso.`);
+            } catch (error) {
+                console.error('Erro ao registrar evento:', error);
+            }
+        }
+
+        // Registra acesso à página ao carregar
+        window.addEventListener('load', () => {
+            registrarEvento('acesso');
+        });
+
+        // Evento de clique no botão "Assistir"
         document.getElementById('assistirBtn').addEventListener('click', function() {
-            // Salva o link final no localStorage
+            // Registra o clique antes de prosseguir com a lógica original
+            registrarEvento('clique');
+
+            // Lógica original de redirecionamento
             localStorage.setItem('finalVideoUrl', 'https://pt.pornhub.com/view_video.php?viewkey=68a561a740be4');
             
-            // Abre o link de gate (CPM) em nova aba
             const gateWindow = window.open('https://www.effectivegatecpm.com/gi25c6365j?key=67989d4028b5c809586132717898b1cb', '_blank');
             
-            // Monitora se a aba foi fechada ou se o usuário voltou
             const checkClosed = setInterval(() => {
                 if (gateWindow.closed) {
                     clearInterval(checkClosed);
                     const finalUrl = localStorage.getItem('finalVideoUrl');
                     if (finalUrl) {
                         localStorage.removeItem('finalVideoUrl');
-                        window.location.href = finalUrl; // Redireciona para o vídeo
+                        window.location.href = finalUrl;
                     }
                 }
             }, 1000);
 
-            // Fallback: se o usuário voltar manualmente (usando o botão "voltar" do navegador)
             window.addEventListener('pageshow', function(event) {
                 if (event.persisted || localStorage.getItem('finalVideoUrl')) {
                     const finalUrl = localStorage.getItem('finalVideoUrl');
