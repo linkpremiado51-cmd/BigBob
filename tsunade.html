@@ -5,132 +5,95 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assistir Vídeo</title>
     <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #1a1a1a;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .container {
-            text-align: center;
-            padding: 20px;
-            background: #111;
-            border-radius: 16px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
-            max-width: 90%;
-        }
-        img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            border: 2px solid #333;
-        }
-        .btn {
-            padding: 14px 36px;
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
-        }
-        .btn:hover {
-            transform: translateY(-3px);
-            background: linear-gradient(135deg, #ff5252, #ff7043);
-            box-shadow: 0 6px 20px rgba(255, 82, 82, 0.6);
-        }
-        .btn:active {
-            transform: translateY(1px);
-        }
+        body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #1a1a1a; font-family: 'Segoe UI', sans-serif; }
+        .container { text-align: center; padding: 20px; background: #111; border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.6); max-width: 90%; }
+        img { max-width: 100%; height: auto; border-radius: 12px; margin-bottom: 20px; border: 2px solid #333; }
+        .btn { padding: 14px 36px; font-size: 20px; font-weight: bold; color: white; background: linear-gradient(135deg, #ff6b6b, #ff8e53); border: none; border-radius: 50px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(255,107,107,0.4); }
+        .btn:hover { transform: translateY(-3px); background: linear-gradient(135deg, #ff5252, #ff7043); box-shadow: 0 6px 20px rgba(255,82,82,0.6); }
     </style>
-    <!-- Integração com Firebase (scripts necessários) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head>
 <body>
     <div class="container">
-        <img src="https://i.postimg.cc/6Qwvq5qZ/IMG-20251102-221221.jpg" alt="Prévia do vídeo">
+        <img src="https://i.postimg.cc/6Qwvq5qZ/IMG-20251102-221221.jpg" alt="Prévia">
         <br>
-        <button class="btn" id="assistirBtn">
-            Assistir
-        </button>
+        <button class="btn" id="assistirBtn">Assistir</button>
     </div>
 
     <script>
-        // Configuração do Firebase (extraída do arquivo "Publicação de serviço.html" fornecido)
+        // === CONFIGURAÇÃO DO PROJETO "sorteio-mega-sorte" ===
         const firebaseConfig = {
-            apiKey: "AIzaSyC6M0hV6L0hV6L0hV6L0hV6L0hV6L0hV6",  // Substitua pela chave real do seu projeto, se necessário (no documento era placeholder)
-            authDomain: "yshippcommerce.firebaseapp.com",
-            projectId: "yshippcommerce",
-            storageBucket: "yshippcommerce.appspot.com",
-            messagingSenderId: "123456789012",
-            appId: "1:123456789012:web:abcdef123456"
+            apiKey: "AIzaSyA9vB_annutvZByThKrsPJbsP9VZ7gyWB0",
+            authDomain: "sorteio-mega-sorte.firebaseapp.com",
+            projectId: "sorteio-mega-sorte",
+            storageBucket: "sorteio-mega-sorte.appspot.com",
+            messagingSenderId: "776750928407",
+            appId: "1:776750928407:web:72da06debB97302b5c252"
+            // measurementId: "G-6DZ7030N00"  ← opcional
         };
 
-        // Inicializa o Firebase
+        // Inicializa Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const auth = firebase.auth();
 
-        // Função para registrar eventos no Firestore (coleção 'cliques')
-        async function registrarEvento(tipo) {
-            try {
-                await db.collection('cliques').add({
-                    tipo: tipo,  // 'acesso' ou 'clique'
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    userAgent: navigator.userAgent,  // Informações do navegador/dispositivo
-                    referrer: document.referrer || 'direto',  // Origem da página
-                    url: window.location.href  // URL atual da página
-                });
-                console.log(`${tipo} registrado com sucesso.`);
-            } catch (error) {
-                console.error('Erro ao registrar evento:', error);
+        // === VERIFICA SE O USUÁRIO ESTÁ LOGADO (invisível) ===
+        let isAuthenticated = false;
+        let userId = null;
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                isAuthenticated = true;
+                userId = user.uid;
+            } else {
+                isAuthenticated = false;
+                userId = null;
             }
-        }
-
-        // Registra acesso à página ao carregar
-        window.addEventListener('load', () => {
-            registrarEvento('acesso');
         });
 
-        // Evento de clique no botão "Assistir"
-        document.getElementById('assistirBtn').addEventListener('click', function() {
-            // Registra o clique antes de prosseguir com a lógica original
-            registrarEvento('clique');
+        // === REGISTRA ACESSO/CLIQUE NO FIRESTORE ===
+        function registrar(tipo) {
+            db.collection("cliques").add({
+                tipo: tipo,
+                videoId: "68a561a740be4",
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                referrer: document.referrer || "direto",
+                url: window.location.href,
+                isAuthenticated: isAuthenticated,
+                userId: userId || "anônimo"
+            }).catch(err => {
+                console.error("Erro ao salvar:", err);
+            });
+        }
 
-            // Lógica original de redirecionamento
+        // Acesso à página
+        window.addEventListener("load", () => {
+            setTimeout(() => registrar("acesso"), 800);
+        });
+
+        // Clique no botão
+        document.getElementById("assistirBtn").addEventListener("click", () => {
+            registrar("clique");
+
+            // Gate + redirecionamento
             localStorage.setItem('finalVideoUrl', 'https://pt.pornhub.com/view_video.php?viewkey=68a561a740be4');
-            
-            const gateWindow = window.open('https://www.effectivegatecpm.com/gi25c6365j?key=67989d4028b5c809586132717898b1cb', '_blank');
-            
-            const checkClosed = setInterval(() => {
-                if (gateWindow.closed) {
-                    clearInterval(checkClosed);
-                    const finalUrl = localStorage.getItem('finalVideoUrl');
-                    if (finalUrl) {
+            const gate = window.open('https://www.effectivegatecpm.com/gi25c6365j?key=67989d4028b5c809586132717898b1cb', '_blank');
+
+            const check = setInterval(() => {
+                if (gate.closed) {
+                    clearInterval(check);
+                    const url = localStorage.getItem('finalVideoUrl');
+                    if (url) {
                         localStorage.removeItem('finalVideoUrl');
-                        window.location.href = finalUrl;
+                        window.location.href = url;
                     }
                 }
             }, 1000);
-
-            window.addEventListener('pageshow', function(event) {
-                if (event.persisted || localStorage.getItem('finalVideoUrl')) {
-                    const finalUrl = localStorage.getItem('finalVideoUrl');
-                    if (finalUrl && window.location.href.indexOf('pornhub') === -1) {
-                        localStorage.removeItem('finalVideoUrl');
-                        window.location.href = finalUrl;
-                    }
-                }
-            });
         });
     </script>
 </body>
